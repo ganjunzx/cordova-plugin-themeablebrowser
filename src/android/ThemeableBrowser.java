@@ -64,6 +64,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.webkit.DownloadListener;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -93,6 +94,7 @@ public class ThemeableBrowser extends CordovaPlugin {
     // private static final String BLANK = "_blank";
     private static final String EXIT_EVENT = "exit";
     private static final String LOAD_START_EVENT = "loadstart";
+    private static final String DOWN_LOAD_LISTEN_EVENT = "downloadlisten";
     private static final String LOAD_STOP_EVENT = "loadstop";
     private static final String LOAD_ERROR_EVENT = "loaderror";
     private static final String MESSAGE_EVENT = "message";
@@ -520,6 +522,29 @@ public class ThemeableBrowser extends CordovaPlugin {
         } else {
             this.inAppWebView.loadUrl(url);
         }
+
+        this.inAppWebView.setDownloadListener(new DownloadListener() {
+            public void onDownloadStart(String url, String userAgent,
+                    String contentDisposition, String mimetype,
+                    long contentLength) {
+                // Intent i = new Intent(Intent.ACTION_VIEW);
+                // i.setData(Uri.parse(url));
+                // cordova.getActivity().startActivity(i);
+
+                try {
+                    JSONObject obj = new JSONObject();
+                    obj.put("type", DOWN_LOAD_LISTEN_EVENT);
+                    obj.put("url", url);
+                    obj.put("userAgent", userAgent);
+                    obj.put("contentDisposition", contentDisposition);
+                    obj.put("mimetype", mimetype);
+                    obj.put("contentLength", contentLength);
+                    sendUpdate(obj, true);
+                } catch (JSONException ex) {
+                    Log.e(LOG_TAG, "URI passed in has caused a JSON error.");
+                }
+            }
+        });
         this.inAppWebView.requestFocus();
     }
 
@@ -889,6 +914,24 @@ public class ThemeableBrowser extends CordovaPlugin {
                 }
 
                 inAppWebView.loadUrl(url);
+                inAppWebView.setDownloadListener(new DownloadListener() {
+                    public void onDownloadStart(String url, String userAgent,
+                            String contentDisposition, String mimetype,
+                            long contentLength) {
+                        try {
+                            JSONObject obj = new JSONObject();
+                            obj.put("type", DOWN_LOAD_LISTEN_EVENT);
+                            obj.put("url", url);
+                            obj.put("userAgent", userAgent);
+                            obj.put("contentDisposition", contentDisposition);
+                            obj.put("mimetype", mimetype);
+                            obj.put("contentLength", contentLength);
+                            sendUpdate(obj, true);
+                        } catch (JSONException ex) {
+                            Log.e(LOG_TAG, "URI passed in has caused a JSON error.");
+                        }
+                    }
+                });
                 inAppWebView.getSettings().setLoadWithOverviewMode(true);
                 inAppWebView.getSettings().setUseWideViewPort(true);
                 inAppWebView.requestFocus();
